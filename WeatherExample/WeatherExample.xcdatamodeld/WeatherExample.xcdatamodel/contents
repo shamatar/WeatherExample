@@ -1,4 +1,24 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model name="Test1.xcdatamodel" userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="1" systemVersion="11A491" minimumToolsVersion="Automatic" macOSVersion="Automatic" iOSVersion="Automatic">
-    <elements/>
+<model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="7549" systemVersion="14C1514" minimumToolsVersion="Automatic" macOSVersion="Automatic" iOSVersion="Automatic">
+    <entity name="City" representedClassName="City" syncable="YES">
+        <attribute name="cityID" optional="YES" attributeType="Integer 64" indexed="YES" syncable="YES"/>
+        <attribute name="latitude" optional="YES" attributeType="Double" syncable="YES"/>
+        <attribute name="longitude" optional="YES" attributeType="Double" syncable="YES"/>
+        <attribute name="nameAndCountry" optional="YES" attributeType="String" indexed="YES" syncable="YES"/>
+    </entity>
+    <entity name="PresentedCities" representedClassName="PresentedCities" syncable="YES">
+        <attribute name="presentationOrder" optional="YES" attributeType="Integer 64" syncable="YES"/>
+        <relationship name="city" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="City" syncable="YES"/>
+        <relationship name="forecasts" optional="YES" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="WeatherForecast" inverseName="presentedCity" inverseEntity="WeatherForecast" syncable="YES"/>
+    </entity>
+    <entity name="WeatherForecast" representedClassName="WeatherForecast" syncable="YES">
+        <attribute name="averageTemperature" optional="YES" attributeType="Double" syncable="YES"/>
+        <attribute name="date" optional="YES" attributeType="Date" indexed="YES" syncable="YES"/>
+        <relationship name="presentedCity" maxCount="1" deletionRule="Nullify" destinationEntity="PresentedCities" inverseName="forecasts" inverseEntity="PresentedCities" syncable="YES"/>
+    </entity>
+    <elements>
+        <element name="City" positionX="-36" positionY="-27" width="128" height="105"/>
+        <element name="PresentedCities" positionX="0" positionY="36" width="128" height="90"/>
+        <element name="WeatherForecast" positionX="27" positionY="54" width="128" height="90"/>
+    </elements>
 </model>

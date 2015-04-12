@@ -7,6 +7,8 @@
 //
 
 #import "AppDelegate.h"
+#import "WeatherDataCore.h"
+#import "City.h"
 
 @interface AppDelegate ()
 
@@ -16,10 +18,107 @@
 
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    id done = [defaults objectForKey:@"CitiesImportDone"];
+    if (done!=nil){
+        if (![done boolValue]){
+            [self importCities];
+        }
+    }
+    else{
+        [self importCities];
+    }
+    [defaults setObject:[NSNumber numberWithBool:YES] forKey:@"CitiesImportDone"];
+    [defaults synchronize];
+    
+    done = [defaults objectForKey:@"FirstLaunchSetupDone"];
+    if (done!=nil){
+        if (![done boolValue]){
+            [self doFirstLaunchSetup];
+        }
+    }
+    else{
+        [self doFirstLaunchSetup];
+    }
+    [defaults setObject:[NSNumber numberWithBool:YES] forKey:@"FirstLaunchSetupDone"];
+    [defaults synchronize];
+    
     // Override point for customization after application launch.
     return YES;
 }
-
+-(void)doFirstLaunchSetup{
+    NSArray *results = [[WeatherDataCore sharedInstance] findCitiesMatchingString:@"Moscow,RU"];
+    [[WeatherDataCore sharedInstance] addCityForPresentationUsingObjectID:[[results objectAtIndex:0] objectID]];
+    results = [[WeatherDataCore sharedInstance] findCitiesMatchingString:@"Saint Petersburg,RU"];
+    [[WeatherDataCore sharedInstance] addCityForPresentationUsingObjectID:[[results objectAtIndex:0] objectID]];
+}
+-(void)importCities{
+    NSArray *res = [[WeatherDataCore sharedInstance] entitiesForName:@"City"];
+    for (City *city in res){
+        [[WeatherDataCore sharedInstance] removeCityWithObjectID:[city objectID]];
+    }
+    NSBundle *bundle = [NSBundle mainBundle];
+    NSString *cityListPath = [bundle pathForResource:@"city_list" ofType:@"txt"];
+    NSError *error=nil;
+    NSString *cityListString = [NSString stringWithContentsOfFile:cityListPath encoding:NSUTF8StringEncoding error:&error];
+    NSUInteger chunkSize = 100;
+    NSNumberFormatter *decimalFormatter = [[NSNumberFormatter alloc] init];
+    decimalFormatter.numberStyle = NSNumberFormatterDecimalStyle;
+    decimalFormatter.maximumFractionDigits=10;
+    decimalFormatter.maximumIntegerDigits=3;
+    NSNumberFormatter *integerFormatter = [[NSNumberFormatter alloc] init];
+    integerFormatter.numberStyle = NSNumberFormatterDecimalStyle;
+    integerFormatter.maximumFractionDigits=0;
+    integerFormatter.maximumIntegerDigits=10;
+    NSArray *cities = [cityListString componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+    NSUInteger size = cities.count;
+    NSMutableArray *processedCities = [NSMutableArray arrayWithCapacity:size];
+    for (NSInteger i=0; i<(NSInteger) ceil ((double)cities.count / (double) chunkSize);i++){
+        NSRange range;
+        if (cities.count - i*chunkSize >= chunkSize){
+            range = NSMakeRange(i*chunkSize, chunkSize);
+        }
+        else{
+            range = NSMakeRange(i*chunkSize, cities.count - i*chunkSize-1);
+        }
+        NSArray *splice = [cities subarrayWithRange:range];
+        for (NSString *city in splice){
+            NSArray *parameters = [city componentsSeparatedByString:@"\t"];
+            NSString *cityIDString = parameters[0];
+            NSString *cityName = parameters[1];
+            NSString *latitudeString = parameters[2];
+            NSString *longitudeString = parameters[3];
+            NSString *country = parameters[4];
+            NSNumber *latitude = [decimalFormatter numberFromString:latitudeString];
+            NSNumber *longitude = [decimalFormatter numberFromString:longitudeString];
+            NSNumber *cityID = [integerFormatter numberFromString:cityIDString];
+            if (cityID && latitude && longitude && (cityName.length!=0) && (country.length!=0)){
+            NSDictionary *dict = @{@"name" : cityName,
+                                   @"country" : country,
+                                   @"latitude" :latitude,
+                                   @"longitude":longitude,
+                                   @"cityID":cityID,};
+            [processedCities addObject:dict];
+            }
+            else{
+                NSLog(@"Nil detected for city %@",cityName);
+            }
+//            [[WeatherDataCore sharedInstance] createCityWithName:cityName Country:country Latitude:latitude Longitude:longitude Index:cityID];
+//            parameters=nil;
+//            cityID=nil;
+//            cityIDString=nil;
+//            cityName=nil;
+//            latitude=nil;
+//            latitudeString=nil;
+//            longitude=nil;
+//            longitudeString=nil;
+        }
+//        splice=nil;
+        NSLog(@"%lu",(unsigned long)i);
+    }
+    [[WeatherDataCore sharedInstance] importArrayOfCities:processedCities];
+//    NSArray *results = [[WeatherDataCore sharedInstance] entitiesForName:@"City"];
+}
 - (void)applicationWillResignActive:(UIApplication *)application {
     // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
     // Use this method to pause ongoing tasks, disable timers, and throttle down OpenGL ES frame rates. Games should use this method to pause the game.
