@@ -58,6 +58,7 @@ const NSString *APIKEY = @"8d27721d1b85de33bf7b03c7d97fd0e";
 }
 -(void)viewWillAppear:(BOOL)animated{
     [super viewWillAppear:animated];
+    self.tableView.tableHeaderView=nil;
 //    [self.tableView setContentOffset:CGPointMake(0.0, self.tableView.tableHeaderView.frame.size.height) animated:NO];
 }
 
@@ -119,6 +120,9 @@ const NSString *APIKEY = @"8d27721d1b85de33bf7b03c7d97fd0e";
 -(void)addCityToPresent:(NSNotification *)object{
     City *city = object.object;
     [[WeatherDataCore sharedInstance] addCityForPresentationUsingObjectID:[city objectID]];
+//    [self.searchController resignFirstResponder];
+//    [self reloadData];
+//    [self attemptDataUpdate];
     [self.searchController dismissViewControllerAnimated:YES completion:^{
         [self reloadData];
         [self attemptDataUpdate];

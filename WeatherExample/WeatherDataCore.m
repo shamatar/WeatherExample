@@ -110,6 +110,12 @@
 -(BOOL)addCityForPresentationUsingObjectID:(NSManagedObjectID *)objectID{
     BOOL success = NO;
     NSManagedObjectContext *context = [self managedObjectContext];
+    NSArray *results = [self entitiesForName:@"PresentedCities"];
+    for (PresentedCities *city in results){
+        if ([[[city.city objectID] URIRepresentation] isEqual:[objectID URIRepresentation]]){
+            return YES;
+        }
+    }
     NSEntityDescription *entityDescription = [NSEntityDescription entityForName:@"PresentedCities" inManagedObjectContext:context];
     if (objectID){
         PresentedCities *new = [[PresentedCities alloc] initWithEntity:entityDescription insertIntoManagedObjectContext:context];
