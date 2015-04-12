@@ -153,6 +153,11 @@ extern const NSString *APIKEY;
     } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
         NSLog(@"Error: %@", operation.responseString);
         [self addRequestOperationForCity:city AndParameters:parameters];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if ([self.refreshControl isRefreshing]){
+                [self.refreshControl endRefreshing];
+            }
+        });
     }];
     [self.manager.operationQueue addOperation:operation];
 }
